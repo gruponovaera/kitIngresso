@@ -1,5 +1,6 @@
 /**
  * Função que varre a planilha e consulta rastreamento na API Linketrack.
+ * Após a atualização, envia mensagens via WhatsApp para o grupo de serviço e para o número de WhatsApp do cliente.
  */
 function atualizarRastreamento() {
   // Abre a planilha / aba
@@ -44,7 +45,21 @@ function atualizarRastreamento() {
           sheet.getRange(i, 7).setValue(observacoes + " Atualizado pelo robô em " + dataAtual + ".");
         }
 
-        // Aguarda 3 segundos entre as consultas (respeita o delay) da API
+        // Formata a mensagem para ser enviada via WhatsApp
+        var nome = sheet.getRange(i, 1).getValue();          // Coluna A (Nome)
+        var ingressoData = sheet.getRange(i, 2).getValue();  // Coluna B (Data Ingresso)
+        var ingressoFormatado = formatarData(new Date(ingressoData)); // Formata a data de ingresso
+        var telefone = sheet.getRange(i, 3).getValue();      // Coluna C (Telefone WhatsApp)
+        var mensagem = "*Nome:* " + nome + "\n*Ingresso:* " + ingressoFormatado + "\n*Código Rastreio:* " + codigoRastreio + "\n*Rastreamento:* " + eventosRastreamento;
+
+        // Envia mensagem para o grupo de serviço
+        // Substitua pelo número do grupo de serviço"
+        enviarMensagemWhatsApp(mensagem, "5511987654321-1234567890@g.us");
+        
+        // Envia mensagem para o cliente (coluna C)
+        enviarMensagemWhatsApp(mensagem, telefone);
+
+        // Aguarda 3 segundos entre as consultas (respeitar o delay) da API
         Utilities.sleep(3000);
       }
     }
@@ -57,8 +72,9 @@ function atualizarRastreamento() {
  * @return {Object} - Retorno da API de rastreamento com eventos e status
  */
 function consultarRastreamento(codigoRastreio) {
-  var url = 'https://api.linketrack.com/track/json?user=gruponovaera&token=12345678902582782853589234572843578420951234567890&codigo=' + codigoRastreio;
+  var url = 'https://api.linketrack.com/track/json?user=gruponovaera@email.com&token=12345678902582782853589234572843578420951234567890&codigo=' + codigoRastreio;
   // Coloque sua credencial da API linketrack user e token
+  // Envie e-mail para api@linketrack.com solicitando credenciais
 
   try {
     // Faz a requisição GET na API
@@ -81,4 +97,58 @@ function formatarEventos(eventos) {
     return evento.data + " " + evento.hora + " " + evento.local + " " + evento.status;
   });
   return eventosFormatados.join("; ");
+}
+
+/**
+ * Função que formata a data no formato "DiaSemana DD/MM/AAAA"
+ * @param {Date} data - Objeto Date a ser formatado
+ * @return {string} - Data formatada com o dia da semana
+ */
+function formatarData(data) {
+  var diasDaSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+  
+  var diaSemana = diasDaSemana[data.getDay()];
+  var dia = ("0" + data.getDate()).slice(-2);
+  var mes = ("0" + (data.getMonth() + 1)).slice(-2);
+  var ano = data.getFullYear();
+  
+  return diaSemana + " " + dia + "/" + mes + "/" + ano;
+}
+
+/**
+ * Função que envia mensagem via WhatsApp usando a Evolution API
+ * @param {string} mensagem - O texto da mensagem que será enviada
+ * @param {string} numero - O número de WhatsApp ou ID do grupo para enviar a mensagem
+ */
+function enviarMensagemWhatsApp(mensagem, numero) {
+  var apiUrl = "https://url.api/message/sendText/instance"; // Substituir pela URL da EvolutionAPI
+  var apiKey = "Token"; // Substituir pelo seu Token da API
+
+  var payload = {
+    "number": numero, // Número ou ID do grupo
+    "text": mensagem   // Texto da mensagem a ser enviada
+  };  
+
+  var options = {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": apiKey,
+    },
+    payload: JSON.stringify(payload),
+  };
+
+  try {
+    var response = UrlFetchApp.fetch(apiUrl, options);
+    var responseData = JSON.parse(response.getContentText());
+
+    // Verifica se a mensagem foi enviada com sucesso
+    if (responseData.success) {
+      Logger.log("Mensagem enviada com sucesso para o WhatsApp via API.");
+    } else {
+      Logger.log("Erro ao enviar a mensagem para o WhatsApp via API: " + responseData.error);
+    }
+  } catch (e) {
+    Logger.log("Erro ao enviar mensagem para o número: " + numero + ". Erro: " + e.message);
+  }
 }
