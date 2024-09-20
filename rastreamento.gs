@@ -19,48 +19,55 @@ function atualizarRastreamento() {
       var resultado = consultarRastreamento(codigoRastreio);
       
       if (resultado && resultado.eventos && resultado.eventos.length > 0) {
-        // Atualiza as informações
-        var eventosRastreamento = formatarEventos(resultado.eventos); // Formata eventos rastreio para a coluna J
-        var dataAtual = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yy");
+        // Formata os eventos rastreio
+        var eventosRastreamento = formatarEventos(resultado.eventos);
         
-        // Atualiza a coluna J com os eventos rastreados
-        sheet.getRange(i, 10).setValue(eventosRastreamento); // Coluna J (Eventos do rastreamento)
+        // Verifica o conteúdo atual da coluna J (Eventos do Rastreamento)
+        var eventosAtuais = sheet.getRange(i, 10).getValue(); // Coluna J
+        
+        // Se houver alteração nos eventos, atualiza a planilha e envia as mensagens
+        if (eventosAtuais !== eventosRastreamento) {
+          var dataAtual = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yy");
+          
+          // Atualiza a coluna J com os eventos rastreados
+          sheet.getRange(i, 10).setValue(eventosRastreamento); // Coluna J (Eventos do rastreamento)
 
-        // Atualiza a coluna F com a data da última atualização
-        sheet.getRange(i, 6).setValue(dataAtual); // Coluna F (Última atualização)
-        
-        // Atualiza a coluna E adicionando " e robô"
-        var servidores = sheet.getRange(i, 5).getValue(); // Coluna E (Servidores)
-        if (!servidores.includes("robô")) {
-          sheet.getRange(i, 5).setValue(servidores + " e robô");
+          // Atualiza a coluna F com a data da última atualização
+          sheet.getRange(i, 6).setValue(dataAtual); // Coluna F (Última atualização)
+          
+          // Atualiza a coluna E adicionando " e robô"
+          var servidores = sheet.getRange(i, 5).getValue(); // Coluna E (Servidores)
+          if (!servidores.includes("robô")) {
+            sheet.getRange(i, 5).setValue(servidores + " e robô");
+          }
+          
+          // Atualiza a coluna G (Observações) com a data atual
+          var observacoes = sheet.getRange(i, 7).getValue(); // Coluna G (Observações)
+          if (resultado.eventos[0].status.includes("entregue")) {
+            sheet.getRange(i, 7).setValue(observacoes + " Confirmado recebimento pelo robô de rastreamento em " + dataAtual + ".");
+            // Se o último evento for de entrega, altera o status para "RECEBIDO"
+            sheet.getRange(i, 4).setValue("RECEBIDO"); // Coluna D (Status de envio)
+          } else {
+            sheet.getRange(i, 7).setValue(observacoes + " Atualizado pelo robô em " + dataAtual + ".");
+          }
+
+          // Formata a mensagem para ser enviada via WhatsApp
+          var nome = sheet.getRange(i, 1).getValue();          // Coluna A (Nome)
+          var ingressoData = sheet.getRange(i, 2).getValue();  // Coluna B (Data Ingresso)
+          var ingressoFormatado = formatarData(new Date(ingressoData)); // Formata a data de ingresso
+          var telefone = sheet.getRange(i, 3).getValue();      // Coluna C (Telefone WhatsApp)
+          var mensagem = "*GRUPO NOVA ERA ONLINE*\n\n*Nome:* " + nome + "\n*Ingresso:* " + ingressoFormatado + "\n*Código Rastreio:* " + codigoRastreio + "\n*Rastreamento:* " + eventosRastreamento + "\n\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br";
+
+          // Envia mensagem para o grupo de serviço
+          // Substitua pelo número do grupo de serviço"
+          enviarMensagemWhatsApp(mensagem, "5511987654321-1234567890@g.us");
+          
+          // Envia mensagem para o cliente (coluna C)
+          enviarMensagemWhatsApp(mensagem, telefone);
+
+          // Aguarda 3 segundos entre as consultas (respeitar o delay) da API
+          Utilities.sleep(3000);
         }
-        
-        // Atualiza a coluna G (Observações) com a data atual
-        var observacoes = sheet.getRange(i, 7).getValue(); // Coluna G (Observações)
-        if (resultado.eventos[0].status.includes("entregue")) {
-          sheet.getRange(i, 7).setValue(observacoes + " Confirmado recebimento pelo robô de rastreamento em " + dataAtual + ".");
-          // Se o último evento for de entrega, altera o status para "RECEBIDO"
-          sheet.getRange(i, 4).setValue("RECEBIDO"); // Coluna D (Status de envio)
-        } else {
-          sheet.getRange(i, 7).setValue(observacoes + " Atualizado pelo robô em " + dataAtual + ".");
-        }
-
-        // Formata a mensagem para ser enviada via WhatsApp
-        var nome = sheet.getRange(i, 1).getValue();          // Coluna A (Nome)
-        var ingressoData = sheet.getRange(i, 2).getValue();  // Coluna B (Data Ingresso)
-        var ingressoFormatado = formatarData(new Date(ingressoData)); // Formata a data de ingresso
-        var telefone = sheet.getRange(i, 3).getValue();      // Coluna C (Telefone WhatsApp)
-        var mensagem = "*Nome:* " + nome + "\n*Ingresso:* " + ingressoFormatado + "\n*Código Rastreio:* " + codigoRastreio + "\n*Rastreamento:* " + eventosRastreamento;
-
-        // Envia mensagem para o grupo de serviço
-        // Substitua pelo número do grupo de serviço"
-        enviarMensagemWhatsApp(mensagem, "5511987654321-1234567890@g.us");
-        
-        // Envia mensagem para o cliente (coluna C)
-        enviarMensagemWhatsApp(mensagem, telefone);
-
-        // Aguarda 3 segundos entre as consultas (respeitar o delay) da API
-        Utilities.sleep(3000);
       }
     }
   }
@@ -121,7 +128,7 @@ function formatarData(data) {
  * @param {string} numero - O número de WhatsApp ou ID do grupo para enviar a mensagem
  */
 function enviarMensagemWhatsApp(mensagem, numero) {
-  var apiUrl = "https://url.api/message/sendText/instance"; // Substituir pela URL da EvolutionAPI
+  var apiUrl = "https://{url.api}/message/sendText/instance"; // Substituir pela URL da EvolutionAPI
   var apiKey = "Token"; // Substituir pelo seu Token da API
 
   var payload = {
