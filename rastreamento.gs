@@ -1,6 +1,7 @@
 /**
  * Função que varre a planilha e consulta rastreamento na API Linketrack.
- * Após a atualização, envia mensagens via WhatsApp para o grupo de serviço e para o número de WhatsApp do cliente.
+ * Após a atualização, envia mensagens via WhatsApp para o grupo de serviço 
+ * e também para o número de contato de WhatsApp do ingressante.
  */
 function atualizarRastreamento() {
   // Abre a planilha / aba
@@ -41,29 +42,40 @@ function atualizarRastreamento() {
             sheet.getRange(i, 5).setValue(servidores + " e robô");
           }
           
-          // Atualiza a coluna G (Observações) com a data atual
+          // Atualiza a coluna G (Observações) com a data atual, evitando duplicação
           var observacoes = sheet.getRange(i, 7).getValue(); // Coluna G (Observações)
           if (resultado.eventos[0].status.includes("entregue")) {
             sheet.getRange(i, 7).setValue(observacoes + " Confirmado recebimento pelo robô de rastreamento em " + dataAtual + ".");
             // Se o último evento for de entrega, altera o status para "RECEBIDO"
             sheet.getRange(i, 4).setValue("RECEBIDO"); // Coluna D (Status de envio)
           } else {
-            sheet.getRange(i, 7).setValue(observacoes + " Atualizado pelo robô em " + dataAtual + ".");
+            // Verificar se já termina com "Atualizado pelo robô em" para evitar repetição
+            if (observacoes.endsWith("Atualizado pelo robô em " + dataAtual + ".")) {
+              observacoes = observacoes.replace(/(\d{2}\/\d{2}\/\d{2})$/, dataAtual);
+            } else {
+              observacoes += " Atualizado pelo robô em " + dataAtual + ".";
+            }
+            sheet.getRange(i, 7).setValue(observacoes);
           }
 
-          // Formata a mensagem para ser enviada via WhatsApp
+          // Obtém informações para a mensagem
           var nome = sheet.getRange(i, 1).getValue();          // Coluna A (Nome)
           var ingressoData = sheet.getRange(i, 2).getValue();  // Coluna B (Data Ingresso)
           var ingressoFormatado = formatarData(new Date(ingressoData)); // Formata a data de ingresso
-          var telefone = sheet.getRange(i, 3).getValue();      // Coluna C (Telefone WhatsApp)
-          var mensagem = "*GRUPO NOVA ERA ONLINE*\n\n*Nome:* " + nome + "\n*Ingresso:* " + ingressoFormatado + "\n*Código Rastreio:* " + codigoRastreio + "\n*Rastreamento:* " + eventosRastreamento + "\n\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br";
+          var contato = sheet.getRange(i, 3).getValue();       // Coluna C (Telefone WhatsApp)
+          var endereco = sheet.getRange(i, 8).getValue();      // Coluna H (Endereço Completo)
+          
+          // Substitui ";" por "\n" para formatação de mensagem
+          var eventosMensagem = eventosRastreamento.replace(/;/g, "\n");
+
+          // Monta a mensagem do WhatsApp 
+          var mensagem = "*GRUPO NOVA ERA ONLINE*\n\n*Nome:* " + nome  + "\n*Contato:* " + contato + "\n*Ingresso:* " + ingressoFormatado + "\n*Código Rastreio:* " + codigoRastreio + "\n*Rastreamento:* \n" + eventosMensagem + "\n*Endereço:* \n" + endereco + "\n\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br";
 
           // Envia mensagem para o grupo de serviço
-          // Substitua pelo número do grupo de serviço"
-          enviarMensagemWhatsApp(mensagem, "5511987654321-1234567890@g.us");
+          enviarMensagemWhatsApp(mensagem, "5511970861705-1613854533@g.us");
           
-          // Envia mensagem para o cliente (coluna C)
-          enviarMensagemWhatsApp(mensagem, telefone);
+          // Envia mensagem para o ingressante (coluna C)
+          enviarMensagemWhatsApp(mensagem, contato);
 
           // Aguarda 3 segundos entre as consultas (respeitar o delay) da API
           Utilities.sleep(3000);
@@ -82,7 +94,7 @@ function consultarRastreamento(codigoRastreio) {
   var url = 'https://api.linketrack.com/track/json?user=gruponovaera@email.com&token=12345678902582782853589234572843578420951234567890&codigo=' + codigoRastreio;
   // Coloque sua credencial da API linketrack user e token
   // Envie e-mail para api@linketrack.com solicitando credenciais
-
+  
   try {
     // Faz a requisição GET na API
     var response = UrlFetchApp.fetch(url);
@@ -97,13 +109,13 @@ function consultarRastreamento(codigoRastreio) {
 /**
  * Função que formata os eventos retornados pela API para salvar na planilha
  * @param {Array} eventos - Array de eventos do objeto rastreado
- * @return {string} - String formatada com os eventos do rastreamento
+ * @return {string} - String formatada com os eventos do rastreamento separados por ;
  */
 function formatarEventos(eventos) {
   var eventosFormatados = eventos.map(function(evento) {
     return evento.data + " " + evento.hora + " " + evento.local + " " + evento.status;
-  });
-  return eventosFormatados.join("; ");
+  }).reverse(); // Inverte a ordem dos eventos
+  return eventosFormatados.join(";"); // Adiciona ; entre os eventos para salvar na planilha
 }
 
 /**
