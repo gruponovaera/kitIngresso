@@ -160,7 +160,7 @@ function statusFaltaEnviar(sheet, row) {
   const endereco = sheet.getRange(row, COLUNA_ENDERECO).getValue();
   const ingressoFormatado = formatarData(new Date(ingressoData));
   
-  const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*FALTA ENVIAR*\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n*Endereço:*\n${endereco}`;
+  const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*STATUS:* FALTA ENVIAR\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n*Endereço:*\n${endereco}`;
   
   // Envia a mensagem para o grupo do Kit Ingresso
   enviarMensagemWhatsApp(mensagem, GRUPO_KIT_INGRESSO);
@@ -188,7 +188,7 @@ function statusEnviado(sheet, row) {
   const codigoRastreio = sheet.getRange(row, COLUNA_CODIGO_RASTREIO).getValue();
   const ingressoFormatado = formatarData(new Date(ingressoData));
   
-  const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*ENVIADO*\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n*Código de Rastreamento:* ${codigoRastreio}\n*Endereço:*\n${endereco}\n\nVocê pode acompanhar seu pedido pelo site dos Correios.`;
+  const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*STATUS:* ENVIADO\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n*Endereço:*\n${endereco}\n\n*Código de Rastreamento:* ${codigoRastreio}\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br`;
   
   // Envia a mensagem para o grupo do Kit Ingresso
   enviarMensagemWhatsApp(mensagem, GRUPO_KIT_INGRESSO);
@@ -212,7 +212,7 @@ function statusRecebido(sheet, row) {
   const nome = sheet.getRange(row, COLUNA_NOME).getValue();
   const contato = sheet.getRange(row, COLUNA_CONTATO).getValue();
   
-  const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*RECEBIDO*\n\n*Nome:* ${nome}\n\nConfirmamos o recebimento do seu kit de ingresso. Por favor, compartilhe uma foto ou vídeo conosco para compartilhar sua experiência!`;
+  const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*STATUS:* RECEBIDO\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n\n*Código de Rastreamento:* ${codigoRastreio}\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br \n\n*Confirme recebimento:* Por favor, se possível, compartilhe uma foto ou vídeo conosco para partilhar sua experiência com o grupo!`;
   
   // Envia a mensagem para o grupo do Kit Ingresso
   enviarMensagemWhatsApp(mensagem, GRUPO_KIT_INGRESSO);
@@ -335,7 +335,7 @@ function atualizarRastreamento() {
             const endereco = sheet.getRange(i, COLUNA_ENDERECO).getValue();
             const eventosMensagem = eventosRastreamento.replace(/;/g, "\n");
             
-            const mensagem = `*GRUPO ${NOME_DO_GRUPO} ONLINE*\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n*Código de Rastreamento:* ${codigoRastreio}\n*Rastreamento:*\n${eventosMensagem}\n*Endereço:*\n${endereco}\n\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br`;
+            const mensagem = `*GRUPO ${NOME_DO_GRUPO}*\n\n*Nome:* ${nome}\n*Contato:* ${contato}\n*Ingresso:* ${ingressoFormatado}\n*Código de Rastreamento:* ${codigoRastreio}\n*Rastreamento:*\n${eventosMensagem}\n*Endereço:*\n${endereco}\n\n*Acesse o site para rastrear:* https://rastreamento.correios.com.br`;
             
             // Envia mensagem para o grupo de serviço
             enviarMensagemWhatsApp(mensagem, GRUPO_SERVICO);
