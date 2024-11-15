@@ -140,7 +140,7 @@ function statusFaltaEndereco(sheet, row) {
   const nome = sheet.getRange(row, COLUNA_NOME).getValue();
   const contato = sheet.getRange(row, COLUNA_CONTATO).getValue();
   
-  const mensagem = `Olá ${nome},\n\nPor favor, envie-nos seu endereço completo, incluindo CEP e pontos de referência, para que possamos enviar seu kit de ingresso.\n\nObrigado!`;
+  const mensagem = `Olá ${nome},\n\nSeja bem vindo(a) a NA e ao nosso grupo. Por favor, nos envie seu endereço completo, incluindo CEP e pontos de referência, para que possamos enviar seu kit de ingresso (ficha/chaveiro branco e o livreto) pelo correio.\n\nObrigado!`;
   
   enviarMensagemWhatsApp(mensagem, contato);
 }
